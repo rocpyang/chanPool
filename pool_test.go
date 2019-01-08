@@ -1,0 +1,36 @@
+package chanPool
+
+import (
+	"testing"
+	"fmt"
+	"time"
+)
+
+func TestNewPool(t *testing.T) {
+	pool := NewPool(10, 10)
+	pool.Start()
+	pool.EnableWaitForAll(false)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.WaitForAll()
+	//time.Sleep(time.Second)
+	pool.Stop()
+	fmt.Println("   pool.AddJob(do)", pool.AddJob(do))
+	pool.Start()
+	time.Sleep(time.Minute)
+}
+func do() {
+	fmt.Println("=========")
+}
+var job_ job=job{"123","321"}
+type job struct {
+	name string
+	val string
+}
+
+func (job job) do()  {
+	fmt.Println("name=========",job.name)
+	fmt.Println("val=========",job.val)
+}
+
