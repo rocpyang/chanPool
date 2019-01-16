@@ -35,6 +35,10 @@ func (w *worker) Start() {
 				job()
 				//监听工人停止信号
 			case <-w.stopSignal:
+				for len(w.jobQueue)>0 {
+					job := <-w.jobQueue
+					job()
+				}
 				w.stopSignal <- struct{}{}
 				return
 			}

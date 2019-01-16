@@ -1,4 +1,5 @@
 package chanPool
+
 import (
 	"errors"
 )
@@ -39,7 +40,11 @@ func (dis *dispatcher) Start() {
 				worker.AddJob(job)
 				// 监听调度器的停止信号
 			case <-dis.stopSignal:
-				for i := 0; i < len(dis.workerPool); i++ {
+				for len(dis.jobQueue)>0 {
+					worker := <-dis.workerPool
+					worker.AddJob(<-dis.jobQueue)
+				}
+				for len(dis.workerPool)>0 {
 					worker := <-dis.workerPool
 					worker.Stop()
 				}
