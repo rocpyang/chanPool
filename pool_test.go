@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewPool(t *testing.T) {
-	pool := NewPool(10, 10)
+	pool := NewPool(50, 2)
 	pool.Start()
 	pool.EnableWaitForAll(false)
 	pool.AddJob(job_.do)

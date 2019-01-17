@@ -1,8 +1,8 @@
 package chanPool
 
 import (
-	"sync"
 	"errors"
+	"sync"
 )
 
 type Pool interface {
@@ -55,7 +55,7 @@ func (p *pool) AddJob(job Job) error {
 	if err != nil {
 		return err
 	}
-	if p.dispatcher.JobQueueLen() > 0 {
+	if p.dispatcher.JobQueueLen() > 0 ||p.workerCount==0 {
 		if p.workerCount < p.workerNum {
 			worker := NewWorker(p.dispatcher.WorkerPool())
 			worker.Start()
