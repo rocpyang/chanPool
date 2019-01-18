@@ -33,6 +33,7 @@ func (this *push) Push(send Send) error {
 }
 func (this *push) Start() {
 	this.chanPool.Start()
+	this.chanPool.EnableWaitForAll(true)
 	this.pushMessage()
 }
 
@@ -40,6 +41,7 @@ func (this *push) Stop() {
 	this.stop = true
 	this.stopSignal <- struct{}{}
 	<-this.stopSignal
+	this.chanPool.WaitForAll()
 	this.chanPool.Stop()
 	close(this.sends)
 	close(this.stopSignal)
