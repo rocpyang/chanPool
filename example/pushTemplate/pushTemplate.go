@@ -11,8 +11,8 @@ type Push interface {
 	Stop()
 }
 
-func NewPush(chanPool chanPool.Pool, sendsnum int, resultFunc func(result Result)) Push {
-	return &push{chanPool: chanPool, sends: make(chan Send, sendsnum), stopSignal: make(chan struct{}), resultFunc: resultFunc}
+func NewPush(workerNum, jobNum , sendsnum int,resultChan chan Result) Push {
+	return &push{chanPool: chanPool.NewPool(workerNum,jobNum), sends: make(chan Send, sendsnum), stopSignal: make(chan struct{}),resultChan:resultChan}
 }
 
 type push struct {
@@ -21,7 +21,7 @@ type push struct {
 	chanPool   chanPool.Pool
 	sends      chan Send
 	stopSignal chan struct{}
-	resultFunc func(result Result)
+	resultChan chan Result
 }
 
 func (this *push) Push(send Send) error {
@@ -58,7 +58,7 @@ func (this *push) pushMessage() {
 					break
 				} else {
 					this.chanPool.AddJob(func() {
-						this.resultFunc(send.Send())
+						this.resultChan<-send.Send()
 						return
 					})
 				}
@@ -66,7 +66,7 @@ func (this *push) pushMessage() {
 				for len(this.sends) > 0 {
 					send := <-this.sends
 					this.chanPool.AddJob(func() {
-						this.resultFunc(send.Send())
+						this.resultChan<-send.Send()
 					})
 				}
 				this.stopSignal <- struct{}{}
