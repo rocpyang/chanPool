@@ -23,11 +23,26 @@ func NewSend(message Message, delegate_code string) Send {
 }
 
 func (this *send) Send() (result Result) {
-	//result, ok := this.subscribe()
-	//if !ok {
-	//	return result
+	//req,err:=http.Get("https://www.baidu.com/")
+	//if err!=nil {
+	//	return
 	//}
-	//return this.send()
+	//fmt.Println(req)
+	//body,err:=ioutil.ReadAll(req.Body)
+	//if err!=nil {
+	//	return
+	//}
+	//body,err=ioutil.ReadAll(req.Body)
+	//if err!=nil {
+	//	return
+	//}
+	//fmt.Println("body=="+string(body))
+	//for range body {
+	//
+	//}
+	//for i:=0;i<10000;i++  {
+	//
+	//}
 	return errorResult(NO_SUBSCRIBE, NO_SUBSCRIBE, this.message)
 }
 
