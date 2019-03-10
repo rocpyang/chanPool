@@ -1,29 +1,30 @@
 package pushTemplate
 
 import (
-	"github.com/JeonYang/chanPool"
 	"errors"
+	"github.com/JeonYang/chanPool"
 )
+
 type Push interface {
 	Push(send ...Send) error
 	Start()
 	Stop()
 }
 
-func NewPush(chanPool chanPool.Pool, sendChanLen,resultChanLen, resultsMaxLen int, resultFunc func(result []Result)) Push {
-	return &push{chanPool: chanPool, sends: make(chan Send, sendChanLen), resultMaxLen: resultsMaxLen,resultChan:make(chan Result,resultChanLen), stopSignal: make(chan struct{}), resultFunc: resultFunc}
+func NewPush(chanPool chanPool.Pool, sendChanLen, resultChanLen, resultsMaxLen int, resultFunc func(result []Result)) Push {
+	return &push{chanPool: chanPool, sends: make(chan Send, sendChanLen), resultMaxLen: resultsMaxLen, resultChan: make(chan Result, resultChanLen), stopSignal: make(chan struct{}), resultFinishSignal: make(chan struct{}), resultFunc: resultFunc}
 }
 
 type push struct {
-	stoped       bool
-	stop         bool
-	chanPool     chanPool.Pool
-	sends        chan Send
-	resultMaxLen int
-	resultChan  chan Result
-	stopSignal   chan struct{}
-	resultFunc   func(result []Result)
-
+	stoped             bool
+	stop               bool
+	chanPool           chanPool.Pool
+	sends              chan Send
+	resultMaxLen       int
+	resultChan         chan Result
+	stopSignal         chan struct{}
+	resultFinishSignal chan struct{}
+	resultFunc         func(result []Result)
 }
 
 func (this *push) Push(send ...Send) error {
@@ -51,6 +52,8 @@ func (this *push) Stop() {
 	close(this.sends)
 	close(this.stopSignal)
 	close(this.resultChan)
+	<-this.resultFinishSignal
+	close(this.resultFinishSignal)
 	this.stoped = true
 }
 
@@ -58,23 +61,23 @@ func (this *push) pushMessage() {
 	go func() {
 		ok := true
 		for {
+			var send Send
 			select {
-			case send, ok := <-this.sends:
+			case send, ok = <-this.sends:
 				if !ok {
 					break
 				} else {
 					this.chanPool.AddJob(func() {
-						result:=send.Send()
-						//	fmt.Println("result====",result)
-						this.resultChan<-result
+						result := send.Send()
+						this.resultChan <- result
 					})
 				}
 			case <-this.stopSignal:
 				for len(this.sends) > 0 {
 					send := <-this.sends
 					this.chanPool.AddJob(func() {
-						result:=send.Send()
-						this.resultChan<-result
+						result := send.Send()
+						this.resultChan <- result
 					})
 				}
 				this.stopSignal <- struct{}{}
@@ -96,6 +99,7 @@ func (this *push) startResultWork() {
 			case send, ok = <-this.resultChan:
 				if !ok {
 					this.resultFunc(results)
+					this.resultFinishSignal <- struct{}{}
 				} else {
 					results = append(results, send)
 					if len(results) == this.resultMaxLen {
