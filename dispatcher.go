@@ -72,7 +72,7 @@ func (dis *dispatcher) WorkerPool() chan Worker {
 
 func (dis *dispatcher) AddJob(job Job) error {
 	if dis.stop {
-		errors.New(Stoped)
+	return	errors.New(Stoped)
 	}
 	dis.jobQueue <- job
 	return nil
