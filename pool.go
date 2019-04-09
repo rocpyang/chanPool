@@ -11,6 +11,7 @@ type Pool interface {
 	Close() error
 	AddJob(job Job) error
 	WaitForAll()
+	WorkerCount() int
 	EnableWaitForAll(enable bool)
 }
 
@@ -35,14 +36,15 @@ type pool struct {
 func NewPool(workerNum, jobNum int) Pool {
 	workers := make(chan Worker, workerNum)
 	jobs := make(chan Job, jobNum)
-	return &pool{
-		workers:          workers,
-		jobs:             jobs,
-		dispatcher:       NewDispatcher(workers, jobs),
+	po := &pool{
+		workers: workers,
+		jobs:    jobs,
 		enableWaitForAll: false,
 		workerNum:        workerNum,
 		jobNum:           jobNum,
 	}
+	po.dispatcher = NewDispatcher(po, workers, jobs)
+	return po
 }
 
 // 添加一个job到job池中
@@ -122,4 +124,9 @@ func (p *pool) Start() {
 	p.dispatcher.Start()
 	p.stoped = false
 	p.stop = false
+}
+
+// 工人总数
+func (p *pool) WorkerCount() int {
+	return p.workerCount
 }

@@ -20,6 +20,7 @@ type dispatcher struct {
 	jobQueue    chan Job
 	stopSignal  chan struct{}
 	closeSignal chan struct{}
+	pool        Pool
 	stop        bool
 	stoped      bool
 	close       bool
@@ -27,8 +28,8 @@ type dispatcher struct {
 }
 
 // 创建调度器
-func NewDispatcher(workerPool chan Worker, jobQueue chan Job) Dispatcher {
-	return &dispatcher{workerPool: workerPool, jobQueue: jobQueue, stopSignal: make(chan struct{}), closeSignal: make(chan struct{})}
+func NewDispatcher(pool Pool, workerPool chan Worker, jobQueue chan Job) Dispatcher {
+	return &dispatcher{pool: pool, workerPool: workerPool, jobQueue: jobQueue, stopSignal: make(chan struct{}), closeSignal: make(chan struct{})}
 }
 
 // 分派工作给自由工人
@@ -51,7 +52,8 @@ func (dis *dispatcher) Start() {
 					worker := <-dis.workerPool
 					worker.AddJob(<-dis.jobQueue)
 				}
-				for len(dis.workerPool) > 0 {
+				// 停止所有的工人
+				for i := 0; i < dis.pool.WorkerCount(); i++ {
 					worker := <-dis.workerPool
 					worker.Stop()
 				}
