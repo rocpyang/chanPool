@@ -23,6 +23,18 @@ func TestNewPool(t *testing.T) {
 	//pool.Start()
 	pool.Stop()
 	time.Sleep(time.Second * 5)
+	pool.Close()
+	pool.Start()
+	pool.EnableWaitForAll(false)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.AddJob(job_.do)
+	pool.WaitForAll()
+	pool.Stop()
+	time.Sleep(time.Second * 5)
 }
 func do() {
 	fmt.Println("=========")
