@@ -3,38 +3,33 @@ package chanPool
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 func TestNewPool(t *testing.T) {
-	pool := NewPool(50, 2)
+	pool := NewPool(3, 3)
 	pool.Start()
-	pool.EnableWaitForAll(false)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
-	pool.WaitForAll()
 	//time.Sleep(time.Second)
-
-	//fmt.Println("   pool.AddJob(do)", pool.AddJob(do))
-	//pool.Start()
+	//
+	////fmt.Println("   pool.AddJob(do)", pool.AddJob(do))
+	////pool.Start()
 	pool.Stop()
-	time.Sleep(time.Second * 5)
-	pool.Close()
+	//time.Sleep(time.Second * 5)
+	//pool.Close()
 	pool.Start()
-	pool.EnableWaitForAll(false)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
 	pool.AddJob(job_.do)
-	pool.WaitForAll()
 	pool.Stop()
-	time.Sleep(time.Second * 5)
+	//time.Sleep(time.Second * 10)
 }
 func do() {
 	fmt.Println("=========")
