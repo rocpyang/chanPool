@@ -23,55 +23,19 @@ func NewSend(message Message, delegate_code string) Send {
 }
 
 func (this *send) Send() (result Result) {
-	//req,err:=http.Get("https://www.baidu.com/")
-	//if err!=nil {
-	//	return
-	//}
-	//fmt.Println(req)
-	//body,err:=ioutil.ReadAll(req.Body)
-	//if err!=nil {
-	//	return
-	//}
-	//body,err=ioutil.ReadAll(req.Body)
-	//if err!=nil {
-	//	return
-	//}
-	//fmt.Println("body=="+string(body))
-	//for range body {
-	//
-	//}
-	//for i:=0;i<10000;i++  {
-	//
-	//}
+
 	return errorResult(NO_SUBSCRIBE, NO_SUBSCRIBE, this.message)
 }
 
 // 校验是否关注
 func (this *send) subscribe() (result Result, ok bool) {
-	//user, err := weChat.UserInfo(this.delegate_code, this.message.OpenId())
-	//if err != nil {
-	//	errorResult("-1", err.Error(), this.message)
-	//	return
-	//}
-	//if user.IsError() {
-	//	errorResult(user.Errcode, user.Errmsg, this.message)
-	//	return
-	//}
-	//if user.Subscribe != 0 {
-	//	ok = true
-	//}
+
 	errorResult(NO_SUBSCRIBE, NO_SUBSCRIBE, this.message)
 	return
 }
 
 // 发送
 func (this *send) send() (result Result) {
-	//resu, err := weChat.SendTemplateMsg(this.message, this.delegate_code)
-	//if err != nil {
-	//	return errorResult("-2", err.Error(), this.message)
-	//}
-	//if resu.IsError() {
-	//	return errorResult(resu.Errcode, resu.Errmsg, this.message)
-	//}
+
 	return successResult(123, this.message)
 }

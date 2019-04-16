@@ -12,7 +12,7 @@ type Push interface {
 }
 
 func NewPush(chanPool chanPool.Pool, sendChanLen, resultChanLen, resultsMaxLen int, resultFunc func(result []Result)) Push {
-	return &push{chanPool: chanPool, sends: make(chan Send, sendChanLen), resultMaxLen: resultsMaxLen, resultChan: make(chan Result, resultChanLen), stopSignal: make(chan struct{}), resultFinishSignal: make(chan struct{}), resultFunc: resultFunc}
+	return &push{chanPool: chanPool, sends: make(chan Send, sendChanLen), resultMaxLen: resultsMaxLen, resultChan: make(chan Result, resultChanLen), stopSignal: make(chan struct{}), stopedSignal: make(chan struct{}), resultFinishSignal: make(chan struct{}), resultFunc: resultFunc}
 }
 
 type push struct {
@@ -23,6 +23,7 @@ type push struct {
 	resultMaxLen       int
 	resultChan         chan Result
 	stopSignal         chan struct{}
+	stopedSignal       chan struct{}
 	resultFinishSignal chan struct{}
 	resultFunc         func(result []Result)
 }
@@ -36,27 +37,33 @@ func (this *push) Push(send ...Send) error {
 	}
 	return nil
 }
+
+// 开启
 func (this *push) Start() {
-	this.chanPool.EnableWaitForAll(true)
 	this.chanPool.Start()
+	// 开启发送消息协程
 	this.pushMessage()
+	// 开启消息反馈处理协程
 	this.startResultWork()
 }
 
+// 停止
 func (this *push) Stop() {
 	this.stop = true
 	this.stopSignal <- struct{}{}
-	<-this.stopSignal
-	this.chanPool.WaitForAll()
+	<-this.stopedSignal
 	this.chanPool.Stop()
 	close(this.sends)
 	close(this.stopSignal)
+	close(this.stopedSignal)
 	close(this.resultChan)
 	<-this.resultFinishSignal
 	close(this.resultFinishSignal)
+	this.chanPool.Close()
 	this.stoped = true
 }
 
+// 开启发送消息
 func (this *push) pushMessage() {
 	go func() {
 		ok := true
@@ -80,7 +87,7 @@ func (this *push) pushMessage() {
 						this.resultChan <- result
 					})
 				}
-				this.stopSignal <- struct{}{}
+				this.stopedSignal <- struct{}{}
 				return
 			}
 			if !ok {
@@ -89,6 +96,8 @@ func (this *push) pushMessage() {
 		}
 	}()
 }
+
+// 开启反馈数据处理
 func (this *push) startResultWork() {
 	go func() {
 		ok := true
