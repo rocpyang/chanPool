@@ -1,20 +1,25 @@
 package chanPool
 
+import "errors"
+
 const (
-	start = "START"
+	start  = "START"
 	stoped = "STOPED"
 	closed = "CLOSED"
-
 )
 
 type PoolError struct {
-	error string
+	error      error
+	defaultJob DefaultJob
 }
 
 func (this *PoolError) Error() string {
-	return this.error
+	return this.error.Error()
 }
-var START = &PoolError{error: start}
-var STOPED = &PoolError{error: stoped}
-var CLOSED = &PoolError{error: closed}
+func (this *PoolError) DefaultJob() DefaultJob {
+	return this.defaultJob
+}
 
+var START = &PoolError{error: errors.New(start)}
+var STOPED = &PoolError{error: errors.New(stoped)}
+var CLOSED = &PoolError{error: errors.New(closed)}
