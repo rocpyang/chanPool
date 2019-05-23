@@ -1,18 +1,17 @@
 package chanPool
 
 import (
-	"errors"
 	"sync"
 )
 
 // 协调器
 type Dispatcher interface {
-	Start()
-	Stop()
+	Start() error
+	Stop() error
 	Close() error
 	AddJob(job Job) error
-	WaitForAll()
-	EnableWaitForAll(enable bool)
+	WaitForAll() error
+	EnableWaitForAll(enable bool) error
 }
 
 // 调度员
@@ -27,10 +26,8 @@ type dispatcher struct {
 	workerNum        int  // 工人总数
 	jobNum           int  // 工作数
 	workerCount      int  // 正在工作工人的数量
-	stop             bool
-	stoped           bool
+	start            bool
 	close            bool
-	closed           bool
 }
 
 // 创建调度器
@@ -41,10 +38,16 @@ func NewDispatcher(workerNum, jobNum int) Dispatcher {
 }
 
 // 分派工作给自由工人
-func (dis *dispatcher) Start() {
-	if dis.close {
-		return
+func (dis *dispatcher) Start() error {
+	if dis.start {
+		return START
 	}
+	if dis.close {
+		return CLOSED
+	}
+	dis.start = true
+	dis.close = false
+	dis.workerCount = 0
 	go func() {
 		for {
 			select {
@@ -73,47 +76,45 @@ func (dis *dispatcher) Start() {
 			}
 		}
 	}()
-	dis.stoped = false
-	dis.stop = false
-	dis.close = false
-	dis.closed = false
-	dis.workerCount = 0
+	return nil
 }
 
-func (dis *dispatcher) Stop() {
-	if dis.close ||!dis.stoped{
-		return
+func (dis *dispatcher) Stop() error {
+	if dis.close {
+		return CLOSED
 	}
-	dis.stop = true
+	if !dis.start {
+		return nil
+	}
 	dis.stopSignal <- struct{}{}
 	<-dis.stopedSignal
-	dis.stoped = true
+	dis.start = false
+	return nil
 }
 
 func (dis *dispatcher) Close() error {
-	if !dis.stoped {
-		return errors.New("the dispatcher is start")
+	if dis.start {
+		return START
 	}
 	if dis.close {
 		return nil
 	}
-	dis.close = true
 	dis.closeSignal <- struct{}{}
 	<-dis.closeSignal
 	close(dis.closeSignal)
 	close(dis.stopSignal)
 	close(dis.jobQueue)
 	close(dis.workerPool)
-	dis.closed = true
+	dis.close = true
 	return nil
 }
 
 func (dis *dispatcher) AddJob(job Job) error {
-	if dis.stop {
-		return errors.New(Stoped)
+	if !dis.start {
+		return STOPED
 	}
 	if dis.close {
-		return errors.New(Closed)
+		return CLOSED
 	}
 	if dis.enableWaitForAll {
 		dis.wg.Add(1)
@@ -135,13 +136,24 @@ func (dis *dispatcher) AddJob(job Job) error {
 }
 
 // 等待所有协程操作完成
-func (dis *dispatcher) WaitForAll() {
+func (dis *dispatcher) WaitForAll() error {
+	if !dis.start {
+		return STOPED
+	}
+	if dis.close {
+		return CLOSED
+	}
 	if dis.enableWaitForAll {
 		dis.wg.Wait()
 	}
+	return nil
 }
 
 // 是否允许等待所有
-func (dis *dispatcher) EnableWaitForAll(enable bool) {
+func (dis *dispatcher) EnableWaitForAll(enable bool) error {
+	if dis.start {
+		return START
+	}
 	dis.enableWaitForAll = enable
+	return nil
 }
