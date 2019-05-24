@@ -50,7 +50,12 @@ func (p *defaultPool) Stop() error {
 func (p *defaultPool) Close() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	return p.dispatcher.Close()
+	err := p.dispatcher.Close()
+	if err != nil {
+		return err
+	}
+	close(p.resultChan)
+	return nil
 }
 
 //Start worker pool and dispatch
